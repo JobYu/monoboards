@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>monoboards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0e1118; --surface: #161922; --surface2: #1e2230; --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.11); --text: #e4e7f5; --text-muted: #6e779a; --text-dim: #3d4464;
+      --accent: #6a8df5; --accent-soft: rgba(106,141,245,0.14); --green: #3ecf72; --red: #f06b6b;
+      --radius: 14px; --radius-sm: 9px;
+    }
+    html, body { min-height: 100%; font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .header { position: sticky; top: 0; z-index: 50; background: rgba(14,17,24,0.88); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #6a8df5 0%, #a07cf8 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.5px; flex-shrink: 0; }
+    .header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s ease; white-space: nowrap; font-family: inherit; text-decoration: none; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border2); }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .lang-wrap { position: relative; }
+    .lang-btn { gap: 4px; padding: 6px 10px; font-size: 12px; }
+    .lang-menu { position: absolute; right: 0; top: 38px; z-index: 60; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); min-width: 130px; padding: 6px; display: none; }
+    .lang-menu.open { display: block; }
+    .lang-item { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: transparent; border: none; color: var(--text); cursor: pointer; font-family: inherit; font-size: 13px; text-align: left; }
+    .lang-item:hover { background: var(--surface2); }
+    .lang-item.active { color: var(--accent); }
+    .main { flex: 1; max-width: 720px; margin: 0 auto; padding: 48px 28px; width: 100%; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+    h2 { font-size: 16px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; color: var(--accent); }
+    p { font-size: 14px; line-height: 1.7; color: var(--text-muted); margin-bottom: 12px; }
+    ul { margin-left: 20px; margin-bottom: 16px; }
+    li { font-size: 14px; line-height: 1.7; color: var(--text-muted); margin-bottom: 6px; }
+    strong { color: var(--text); font-weight: 600; }
+    .highlight { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 20px 0; }
+    .highlight p { margin: 0; color: var(--text); }
+    .footer { border-top: 1px solid var(--border); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; gap: 8px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-links a { color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--accent); }
+    @media (max-width: 580px) { .header { padding: 0 16px; } .main { padding: 32px 16px; } h1 { font-size: 20px; } .footer { padding: 14px 16px; flex-direction: column; text-align: center; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">M</div>
+      <span class="header-title">monoboards</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="lang-wrap">
+        <button class="btn btn-ghost lang-btn" id="langBtn" onclick="toggleLangMenu(event)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span id="langLabel"></span>
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button class="lang-item" id="lang-zh-TW" onclick="setLang('zh-TW')">繁體中文</button>
+          <button class="lang-item" id="lang-zh-CN" onclick="setLang('zh-CN')">简体中文</button>
+          <button class="lang-item" id="lang-en" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <a class="btn btn-ghost" href="index.html" id="backBtn">← 返回應用</a>
+    </div>
+  </header>
+
+  <main class="main" id="content"></main>
+
+  <footer class="footer">
+    <div>&copy; monoboards</div>
+    <div class="footer-links">
+      <a href="index.html" id="footerHome"></a>
+      <a href="terms.html" id="footerTerms"></a>
+    </div>
+  </footer>
+</div>
+
+<script>
+const I18N = {
+  'zh-TW': {
+    backToApp: '← 返回應用',
+    title: '隱私協議',
+    subtitle: '最後更新日期：2026年4月19日',
+    highlight: '核心原則：monoboards 不收集任何個人數據，所有數據僅保存在你的瀏覽器本地。',
+    s1Title: '1. 數據存儲方式',
+    s1P1: 'monoboards 是一款純靜態、完全離線的網頁應用。你創建的所有項目、待辦事項和進度數據僅通過瀏覽器的 <strong>localStorage</strong> 功能存儲在你的設備本地。',
+    s1L1: '數據不會上傳到任何遠端伺服器',
+    s1L2: '開發者無法訪問你的任何數據',
+    s1L3: '清除瀏覽器緩存或卸載瀏覽器將導致數據丟失',
+    s2Title: '2. 不收集的數據',
+    s2P1: 'monoboards <strong>不會</strong>收集以下任何信息：',
+    s2L1: '姓名、電子郵件地址或其他個人身份信息',
+    s2L2: 'IP 地址或地理位置',
+    s2L3: '瀏覽器歷史或 Cookie',
+    s2L4: '使用統計或分析數據',
+    s2L5: '設備信息或指紋',
+    s3Title: '3. 第三方服務',
+    s3P1: '本應用唯一引用的外部資源是 Google Fonts 提供的 <strong>Inter 字體</strong>。加載字體時，Google 可能會記錄你的 IP 地址，但 monoboards 本身不參與這一過程。如果你在意這一點，可以斷開網絡使用本地字體。',
+    s4Title: '4. 數據安全與備份',
+    s4P1: '由於數據僅存於本地，<strong>數據安全由你全權負責</strong>。建議定期使用「導出 Markdown」功能備份重要數據。開發者不對因瀏覽器故障、設備損壞或誤刪除導致的數據丟失承擔責任。',
+    s5Title: '5. 協議變更',
+    s5P1: '本隱私協議可能會隨產品更新而調整。重大變更將通過應用內提示或更新日誌告知。繼續使用 monoboards 即表示你同意最新版本的隱私協議。',
+    s6Title: '6. 聯繫我們',
+    s6P1: '如有任何隱私相關的疑問，請發送郵件至：<strong>info@pixelart.tech</strong>',
+    home: '返回應用',
+    terms: '使用協議',
+    langLabel: '繁體中文'
+  },
+  'zh-CN': {
+    backToApp: '← 返回应用',
+    title: '隐私协议',
+    subtitle: '最后更新日期：2026年4月19日',
+    highlight: '核心原则：monoboards 不收集任何个人数据，所有数据仅保存在你的浏览器本地。',
+    s1Title: '1. 数据存储方式',
+    s1P1: 'monoboards 是一款纯静态、完全离线的网页应用。你创建的所有项目、待办事项和进度数据仅通过浏览器的 <strong>localStorage</strong> 功能存储在你的设备本地。',
+    s1L1: '数据不会上传到任何远端服务器',
+    s1L2: '开发者无法访问你的任何数据',
+    s1L3: '清除浏览器缓存或卸载浏览器将导致数据丢失',
+    s2Title: '2. 不收集的数据',
+    s2P1: 'monoboards <strong>不会</strong>收集以下任何信息：',
+    s2L1: '姓名、电子邮件地址或其他个人身份信息',
+    s2L2: 'IP 地址或地理位置',
+    s2L3: '浏览器历史或 Cookie',
+    s2L4: '使用统计或分析数据',
+    s2L5: '设备信息或指纹',
+    s3Title: '3. 第三方服务',
+    s3P1: '本应用唯一引用的外部资源是 Google Fonts 提供的 <strong>Inter 字体</strong>。加载字体时，Google 可能会记录你的 IP 地址，但 monoboards 本身不参与这一过程。如果你在意这一点，可以断开网络使用本地字体。',
+    s4Title: '4. 数据安全与备份',
+    s4P1: '由于数据仅存于本地，<strong>数据安全由你全权负责</strong>。建议定期使用「导出 Markdown」功能备份重要数据。开发者不对因浏览器故障、设备损坏或误删除导致的数据丢失承担责任。',
+    s5Title: '5. 协议变更',
+    s5P1: '本隐私协议可能会随产品更新而调整。重大变更将通过应用内提示或更新日志告知。继续使用 monoboards 即表示你同意最新版本的隐私协议。',
+    s6Title: '6. 联系我们',
+    s6P1: '如有任何隐私相关的疑问，请发送邮件至：<strong>info@pixelart.tech</strong>',
+    home: '返回应用',
+    terms: '使用协议',
+    langLabel: '简体中文'
+  },
+  'en': {
+    backToApp: '← Back to App',
+    title: 'Privacy Policy',
+    subtitle: 'Last updated: April 19, 2026',
+    highlight: 'Core Principle: monoboards does not collect any personal data. All data is stored locally in your browser.',
+    s1Title: '1. Data Storage',
+    s1P1: 'monoboards is a pure static, fully offline web application. All projects, tasks, and progress data you create are stored on your device locally via the browser\'s <strong>localStorage</strong> feature.',
+    s1L1: 'Data is not uploaded to any remote server',
+    s1L2: 'Developers have no access to your data',
+    s1L3: 'Clearing browser cache or uninstalling the browser will result in data loss',
+    s2Title: '2. Data We Do Not Collect',
+    s2P1: 'monoboards <strong>does not</strong> collect any of the following:',
+    s2L1: 'Name, email address, or other personally identifiable information',
+    s2L2: 'IP address or geolocation',
+    s2L3: 'Browser history or cookies',
+    s2L4: 'Usage statistics or analytics data',
+    s2L5: 'Device information or fingerprints',
+    s3Title: '3. Third-Party Services',
+    s3P1: 'The only external resource referenced by this application is the <strong>Inter font</strong> provided by Google Fonts. When loading fonts, Google may log your IP address, but monoboards itself is not involved in this process. If this concerns you, you can disconnect from the network and use system fonts.',
+    s4Title: '4. Data Security & Backups',
+    s4P1: 'Since all data is stored locally, <strong>data security is entirely your responsibility</strong>. We recommend regularly backing up important data using the "Export Markdown" feature. The developer is not responsible for data loss caused by browser failures, device damage, or accidental deletion.',
+    s5Title: '5. Policy Changes',
+    s5P1: 'This privacy policy may be updated as the product evolves. Significant changes will be communicated through in-app notices or update logs. Continuing to use monoboards means you agree to the latest version of the privacy policy.',
+    s6Title: '6. Contact Us',
+    s6P1: 'If you have any privacy-related questions, please email us at: <strong>info@pixelart.tech</strong>',
+    home: 'Back to App',
+    terms: 'Terms of Use',
+    langLabel: 'English'
+  }
+};
+
+const LANG_NAMES = { 'zh-TW': '繁體中文', 'zh-CN': '简体中文', 'en': 'English' };
+
+function detectLang() {
+  const saved = localStorage.getItem('monoboards-lang');
+  if (saved && I18N[saved]) return saved;
+  const nav = navigator.language || navigator.userLanguage || 'zh-TW';
+  if (nav.startsWith('zh-TW') || nav.startsWith('zh-HK')) return 'zh-TW';
+  if (nav.startsWith('zh')) return 'zh-CN';
+  if (nav.startsWith('en')) return 'en';
+  return 'zh-TW';
+}
+
+let currentLang = detectLang();
+document.documentElement.lang = currentLang === 'en' ? 'en' : currentLang;
+
+function t(key) {
+  return (I18N[currentLang] && I18N[currentLang][key]) || I18N['zh-TW'][key] || key;
+}
+
+function setLang(lang) {
+  if (!I18N[lang]) return;
+  currentLang = lang;
+  localStorage.setItem('monoboards-lang', lang);
+  document.documentElement.lang = lang === 'en' ? 'en' : lang;
+  closeLangMenu();
+  renderContent();
+}
+
+function toggleLangMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('langMenu');
+  const isOpen = menu.classList.contains('open');
+  closeMenus();
+  if (!isOpen) menu.classList.add('open');
+}
+
+function closeLangMenu() {
+  document.getElementById('langMenu').classList.remove('open');
+}
+
+function closeMenus() {
+  closeLangMenu();
+}
+
+document.addEventListener('click', () => closeMenus());
+
+function renderContent() {
+  document.getElementById('langLabel').textContent = LANG_NAMES[currentLang];
+  document.getElementById('backBtn').textContent = t('backToApp');
+  document.getElementById('footerHome').textContent = t('home');
+  document.getElementById('footerTerms').textContent = t('terms');
+
+  document.querySelectorAll('.lang-item').forEach(el => el.classList.remove('active'));
+  const active = document.getElementById('lang-' + currentLang);
+  if (active) active.classList.add('active');
+
+  document.getElementById('content').innerHTML = `
+    <h1>${t('title')}</h1>
+    <p class="subtitle">${t('subtitle')}</p>
+
+    <div class="highlight">
+      <p>${t('highlight')}</p>
+    </div>
+
+    <h2>${t('s1Title')}</h2>
+    <p>${t('s1P1')}</p>
+    <ul>
+      <li>${t('s1L1')}</li>
+      <li>${t('s1L2')}</li>
+      <li>${t('s1L3')}</li>
+    </ul>
+
+    <h2>${t('s2Title')}</h2>
+    <p>${t('s2P1')}</p>
+    <ul>
+      <li>${t('s2L1')}</li>
+      <li>${t('s2L2')}</li>
+      <li>${t('s2L3')}</li>
+      <li>${t('s2L4')}</li>
+      <li>${t('s2L5')}</li>
+    </ul>
+
+    <h2>${t('s3Title')}</h2>
+    <p>${t('s3P1')}</p>
+
+    <h2>${t('s4Title')}</h2>
+    <p>${t('s4P1')}</p>
+
+    <h2>${t('s5Title')}</h2>
+    <p>${t('s5P1')}</p>
+
+    <h2>${t('s6Title')}</h2>
+    <p>${t('s6P1')}</p>
+  `;
+}
+
+renderContent();
+</script>
+</body>
+</html>
