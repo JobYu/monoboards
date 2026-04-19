@@ -52,6 +52,12 @@ npx serve .
 - Data stays in the browser only and is **not** uploaded anywhere.
 - Clearing site data or switching browsers/devices can lose content; use in-app **Export Markdown** for backups.
 
+## Security notice
+
+**Do not store passwords, API keys, private keys, or any sensitive personal data in monoboards.**
+
+All data is stored **in plain text** in the browser's `localStorage`. Anyone with physical access to your device, or any malware running on it, can read this data directly. Use monoboards for general task and project management only.
+
 ## Contact
 
 - Email: [info@pixelart.tech](mailto:info@pixelart.tech)

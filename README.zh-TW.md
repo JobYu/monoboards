@@ -50,6 +50,12 @@ npx serve .
 - 資料僅存在本機瀏覽器，**不會**上傳至任何伺服器。
 - 清除網站資料或換瀏覽器／裝置可能遺失內容；請定期使用應用內的 **匯出 Markdown** 備份。
 
+## 安全提醒
+
+**請勿在 monoboards 中儲存密碼、API 金鑰、私鑰或任何敏感個人資料。**
+
+所有資料皆以**明文**儲存於瀏覽器的 `localStorage`。任何能實際接觸你裝置的人，或裝置上的惡意程式，都能直接讀取這些資料。請僅將 monoboards 用於一般任務與專案管理。
+
 ## 聯絡
 
 - Email: [info@pixelart.tech](mailto:info@pixelart.tech)
