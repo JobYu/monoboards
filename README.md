@@ -1,6 +1,6 @@
 # monoboards
 
-**Languages:** English
+**Languages:** English (this file) · [繁體中文](README.zh-TW.md)
 
 A static, offline project kanban: open it in a browser, store data locally in **localStorage**, with no backend and no package dependencies.
 
