@@ -7,7 +7,7 @@ A static, offline project kanban: open it in a browser, store data locally in **
 ## Features
 
 - Project cards on a board (drag to reorder)
-- Todos: add, check off, edit, delete
+- Todos: add, check off, edit, delete; optional **sub-tasks** per item
 - Live progress bar and completion rate
 - Markdown export (single project or all)
 - Responsive layout (desktop and mobile)
@@ -18,7 +18,7 @@ A static, offline project kanban: open it in a browser, store data locally in **
 
 | Area         | Details                                                                        |
 | ------------ | ------------------------------------------------------------------------------ |
-| Frontend     | HTML5, CSS3, Vanilla JavaScript (ES6+)                                         |
+| Frontend     | HTML5, CSS3, Vanilla JavaScript (ES6+); split into `index.html`, `app.css`, `i18n.js`, `app.js` |
 | Storage      | `localStorage` (app data key `kanban-v2`; locale preference `monoboards-lang`) |
 | Font         | [Inter](https://fonts.google.com/specimen/Inter) (Google Fonts CDN)            |
 | Dependencies | None                                                                           |
@@ -28,11 +28,15 @@ A static, offline project kanban: open it in a browser, store data locally in **
 
 ```
 monoboards/
-├── index.html       Main app (single file, inline styles & scripts)
+├── index.html       App shell (markup)
+├── app.css          Styles
+├── i18n.js          Translations & locale helpers
+├── app.js           Kanban logic & persistence
 ├── privacy.html     Privacy policy
 ├── terms.html       Terms of use
 ├── README.md        This file (English)
 ├── README.zh-TW.md  Traditional Chinese readme
+├── history.md       Changelog / feature history
 └── _MANIFEST.md     Extended internal notes and constraints
 ```
 
@@ -66,4 +70,4 @@ All data is stored **in plain text** in the browser's `localStorage`. Anyone wit
 
 This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
 
-For more implementation detail and known limitations, see `[_MANIFEST.md](_MANIFEST.md)`.
+For implementation detail and known limitations, see [_MANIFEST.md](_MANIFEST.md). For feature iterations and optimizations, see [history.md](history.md).

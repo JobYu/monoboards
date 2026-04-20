@@ -6,7 +6,7 @@
 
 ## 技術棧
 
-- **語言**: HTML5 + CSS3 + Vanilla JavaScript (ES6+)
+- **語言**: HTML5 + CSS3 + Vanilla JavaScript (ES6+)；樣式 `app.css`，文案 `i18n.js`，邏輯 `app.js`，入口 `index.html`
 - **存儲**: localStorage (完全離線，不上傳任何數據)
 - **字體**: Inter (Google Fonts CDN)
 - **依賴**: 零
@@ -15,18 +15,24 @@
 
 ```
 monoboards/
-├── index.html         │  主應用（單文件，全部功能）
+├── index.html         │  主應用入口（結構與標記）
+├── app.css            │  樣式表
+├── i18n.js            │  多語文案與 t() / 語言切換
+├── app.js             │  看板邏輯與 localStorage
 ├── privacy.html       │  隱私協議
 ├── terms.html         │  使用協議
 ├── README.md          │  倉庫說明（英文，預設）
 ├── README.zh-TW.md    │  倉庫說明（繁體中文）
+├── history.md         │  變更紀錄／功能迭代
 └── _MANIFEST.md       │  本文件
 ```
+
+對外說明亦見根目錄 `README.md` / `README.zh-TW.md`；**功能與迭代紀錄**見 `history.md`。
 
 ## 核心功能
 
 - ✅ 項目卡片看板（拖曳排序）
-- ✅ Todo 清單（新增 / 勾選 / 編輯 / 刪除）
+- ✅ Todo 清單（新增 / 勾選 / 編輯 / 刪除；每條可附**子清單**）
 - ✅ 實時進度條與完成率計算
 - ✅ 數據持久化（localStorage，鍵名 `kanban-v2`）
 - ✅ Markdown 導出（單項目 / 全部）
@@ -64,7 +70,7 @@ npx serve .
 
 ## 已知約束
 
-- 單文件架構：CSS 和 JS 內聯在 HTML 中，不拆分
+- 多檔靜態結構：`index.html` + `app.css` + `i18n.js` + `app.js` 需同目錄（或 CDN 等效路徑）一併部署，否則頁面無法載入樣式或腳本
 - 無後端：不支援多用戶協作
 - 無雲同步：換設備需手動導出/導入（目前僅支援導出）
 

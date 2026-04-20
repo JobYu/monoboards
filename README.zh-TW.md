@@ -7,7 +7,7 @@
 ## 功能摘要
 
 - 專案卡片看板（拖曳排序）
-- Todo：新增、勾選、編輯、刪除
+- Todo：新增、勾選、編輯、刪除；每條可附**子清單**
 - 即時進度條與完成率
 - Markdown 匯出（單一專案或全部）
 - 響應式版面（桌面與行動裝置）
@@ -17,7 +17,7 @@
 
 | 項目 | 說明 |
 |------|------|
-| 前端 | HTML5、CSS3、Vanilla JavaScript (ES6+) |
+| 前端 | HTML5、CSS3、Vanilla JavaScript (ES6+)；分為 `index.html`、`app.css`、`i18n.js`、`app.js` |
 | 儲存 | `localStorage`（鍵名 `kanban-v2`）；語言偏好 `monoboards-lang` |
 | 字型 | [Inter](https://fonts.google.com/specimen/Inter)（Google Fonts CDN） |
 | 依賴 | 零 |
@@ -26,11 +26,15 @@
 
 ```
 monoboards/
-├── index.html       主應用（單檔，內嵌樣式與腳本）
+├── index.html       主應用入口（標記）
+├── app.css          樣式表
+├── i18n.js          多語文案與語言切換
+├── app.js           看板邏輯與儲存
 ├── privacy.html     隱私權政策
 ├── terms.html       使用條款
 ├── README.md        英文說明（預設）
 ├── README.zh-TW.md  繁體中文說明（本文件）
+├── history.md       變更紀錄／功能迭代
 └── _MANIFEST.md     較完整的內部說明與約束
 ```
 
@@ -64,4 +68,4 @@ npx serve .
 
 本專案以 [GNU Affero General Public License v3.0](LICENSE) 授權。
 
-更多實作細節與已知限制見 [`_MANIFEST.md`](_MANIFEST.md)。
+更多實作細節與已知限制見 [`_MANIFEST.md`](_MANIFEST.md)；功能迭代與優化紀錄見 [`history.md`](history.md)。

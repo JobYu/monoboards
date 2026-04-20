@@ -1,0 +1,480 @@
+const KEY = 'kanban-v2';
+function normalizeTodo(t) {
+if (!Array.isArray(t.children)) t.children = [];
+}
+function sortSubtasksByDone(t) {
+normalizeTodo(t);
+if (!t.children.length) return;
+const pending = t.children.filter(s => !s.done);
+const done = t.children.filter(s => s.done);
+t.children = [...pending, ...done];
+}
+function sortTodosByDone(p) {
+if (!p.todos?.length) return;
+const pending = p.todos.filter(t => !t.done);
+const done = p.todos.filter(t => t.done);
+p.todos = [...pending, ...done];
+}
+function taskDone(t) {
+normalizeTodo(t);
+let d = t.done ? 1 : 0;
+for (const c of t.children) if (c.done) d++;
+return d;
+}
+function taskTotal(t) {
+normalizeTodo(t);
+return 1 + t.children.length;
+}
+function projectDone(p) { return p.todos.reduce((s, t) => s + taskDone(t), 0); }
+function projectTotal(p) { return p.todos.reduce((s, t) => s + taskTotal(t), 0); }
+function load() {
+try {
+  const s = JSON.parse(localStorage.getItem(KEY)) || { projects: [] };
+  (s.projects || []).forEach(p => {
+    (p.todos || []).forEach(normalizeTodo);
+    sortTodosByDone(p);
+  });
+  return s;
+} catch { return { projects: [] }; }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+let state = load();
+
+function sortedProjects() { return [...state.projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); }
+function resequence() { state.projects.forEach((p, i) => p.order = i); }
+function render() { renderGrid(); renderBadge(); }
+function renderBadge() {
+const el = document.getElementById('headerBadge');
+const n = state.projects.length;
+if (!n) { el.textContent = ''; return; }
+const done = state.projects.reduce((s, p) => s + projectDone(p), 0);
+const total = state.projects.reduce((s, p) => s + projectTotal(p), 0);
+el.textContent = t('projectsCount', n) + ' \u00b7 ' + t('completedCount', done, total);
+}
+function pct(p) {
+const tot = projectTotal(p);
+return tot ? Math.round(projectDone(p) / tot * 100) : 0;
+}
+
+function renderGrid() {
+const grid = document.getElementById('grid');
+const projects = sortedProjects();
+if (!projects.length) {
+  grid.innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">\ud83d\udccb</div>
+      <h2>${escHtml(t('emptyTitle'))}</h2>
+      <p>${escHtml(t('emptyDesc'))}</p>
+      <button class="btn btn-primary" style="margin-top:4px" onclick="openModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        ${escHtml(t('emptyButton'))}
+      </button>
+    </div>`;
+  return;
+}
+grid.innerHTML = projects.map(p => cardHtml(p)).join('') + addCardHtml();
+bindDrag();
+}
+
+function patchCard(pid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) { render(); return; }
+const el = document.getElementById('card-' + pid);
+if (!el) { render(); return; }
+el.outerHTML = cardHtml(p);
+renderBadge();
+const next = document.getElementById('card-' + pid);
+if (next) attachCardDrag(next);
+}
+
+function closeMenus() {
+document.querySelectorAll('.more-menu.open').forEach(el => el.classList.remove('open'));
+closeLangMenu();
+}
+
+function attachCardDrag(card) {
+card.draggable = true;
+card.addEventListener('dragstart', onDragStart);
+card.addEventListener('dragend', onDragEnd);
+card.addEventListener('dragover', onDragOver);
+card.addEventListener('dragleave', onDragLeave);
+card.addEventListener('drop', onDrop);
+}
+function bindDrag() {
+document.querySelectorAll('.card').forEach(attachCardDrag);
+}
+
+function onDragStart(e) {
+const card = e.currentTarget;
+if (!card.id) return;
+card.classList.add('dragging');
+e.dataTransfer.effectAllowed = 'move';
+e.dataTransfer.setData('text/plain', card.id);
+}
+
+function onDragEnd() {
+document.querySelectorAll('.card.drop-before,.card.drop-after,.card.dragging').forEach(el => el.classList.remove('drop-before', 'drop-after', 'dragging'));
+}
+
+function onDragOver(e) {
+e.preventDefault();
+const target = e.currentTarget;
+if (!target.id || target.classList.contains('dragging')) return;
+const rect = target.getBoundingClientRect();
+const before = e.clientX < rect.left + rect.width / 2;
+target.classList.toggle('drop-before', before);
+target.classList.toggle('drop-after', !before);
+}
+
+function onDragLeave(e) {
+e.currentTarget.classList.remove('drop-before', 'drop-after');
+}
+
+function onDrop(e) {
+e.preventDefault();
+const sourceId = e.dataTransfer.getData('text/plain');
+const target = e.currentTarget;
+if (!sourceId || !target.id || sourceId === target.id) return;
+const sourceIndex = state.projects.findIndex(p => 'card-' + p.id === sourceId);
+const targetIndex = state.projects.findIndex(p => 'card-' + p.id === target.id);
+if (sourceIndex < 0 || targetIndex < 0) return;
+const [moved] = state.projects.splice(sourceIndex, 1);
+const insertIndex = sourceIndex < targetIndex && target.classList.contains('drop-after') ? targetIndex : targetIndex + (target.classList.contains('drop-after') ? 1 : 0);
+state.projects.splice(Math.max(0, Math.min(insertIndex, state.projects.length)), 0, moved);
+resequence();
+save();
+render();
+}
+
+function todoBlockHtml(p, todo) {
+normalizeTodo(todo);
+const subs = todo.children.map(sub => `
+    <div class="todo-sub">
+      <div class="cb ${sub.done ? 'on' : ''}" onclick="toggleSubtask('${p.id}','${todo.id}','${sub.id}')"></div>
+      <div class="todo-text todo-sub-text ${sub.done ? 'done' : ''}"
+        contenteditable="true"
+        onblur="saveSubtask('${p.id}','${todo.id}','${sub.id}',this)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+      >${escHtml(sub.text)}</div>
+      <button type="button" class="icon-btn del todo-del" onclick="deleteSubtask('${p.id}','${todo.id}','${sub.id}'); event.stopPropagation();" title="${escAttr(t('deleteTodo'))}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+const subAdd = `
+    <div class="todo-sub-add">
+      <input class="add-input add-input-sub" id="subinp-${p.id}-${todo.id}" placeholder="${escAttr(t('addSubPlaceholder'))}" maxlength="200"
+        onkeydown="if(event.key==='Enter')addSubtask('${p.id}','${todo.id}')" />
+      <button type="button" class="add-btn add-btn-sub" onclick="addSubtask('${p.id}','${todo.id}')" title="${escAttr(t('add'))}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>`;
+return `
+  <div class="todo-block">
+    <div class="todo-item">
+      <div class="cb ${todo.done ? 'on' : ''}" onclick="toggleTodo('${p.id}','${todo.id}')"></div>
+      <div class="todo-text ${todo.done ? 'done' : ''}"
+        contenteditable="true"
+        onblur="saveTodo('${p.id}','${todo.id}',this)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+      >${escHtml(todo.text)}</div>
+      <button type="button" class="icon-btn del todo-del" onclick="deleteTodo('${p.id}','${todo.id}'); event.stopPropagation();" title="${escAttr(t('deleteTodo'))}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="todo-sub-wrap">${subs}${subAdd}</div>
+  </div>`;
+}
+
+function cardHtml(p) {
+const done = projectDone(p);
+const total = projectTotal(p);
+const pp = pct(p);
+const full = total > 0 && done === total;
+const todos = p.todos.length
+  ? p.todos.map(todo => todoBlockHtml(p, todo)).join('')
+  : `<div class="todo-empty">${escHtml(t('todoEmpty'))}</div>`;
+
+return `
+<div class="card" id="card-${p.id}">
+  <div class="card-accent${full?' full':''}"></div>
+  <div class="card-head">
+    <div class="card-title-wrap">
+      <input class="card-name" value="${escAttr(p.name)}" placeholder="${escAttr(t('projectName'))}"
+        onblur="renameProject('${p.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" />
+      <div class="card-meta">${formatDate(p.createdAt)}</div>
+    </div>
+    <div class="card-actions">
+      <button class="icon-btn" onclick="exportProjectMd('${p.id}'); event.stopPropagation();" title="${escAttr(t('export'))}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <div class="more-wrap">
+        <button class="icon-btn" onclick="toggleMore('${p.id}', event)" title="${escAttr(t('more'))}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+        <div class="more-menu" id="more-${p.id}" onclick="event.stopPropagation()">
+          <button class="more-item danger" onclick="deleteProject('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            ${escHtml(t('deleteProject'))}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-progress">
+    <div class="prog-row">
+      <span class="prog-counts">${escHtml(t('completedCount', done, total))}</span>
+      <span class="prog-pct${full?' done-all':''}">${full ? t('allDone') : pp + '%'}</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill${full?' done-all':''}" style="width:${pp}%"></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card-todos" id="todos-${p.id}">${todos}</div>
+
+  <div class="card-add">
+    <input class="add-input" id="inp-${p.id}" placeholder="${escAttr(t('addTodoPlaceholder'))}" maxlength="200"
+      onkeydown="if(event.key==='Enter')addTodo('${p.id}')" />
+    <button class="add-btn" onclick="addTodo('${p.id}')" title="${escAttr(t('add'))}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+</div>`;
+}
+
+function addCardHtml() {
+return `<div class="add-card" onclick="openModal()">
+  <div class="add-card-icon">＋</div>
+  <span>${escHtml(t('addProject'))}</span>
+</div>`;
+}
+
+function toggleMore(pid, event) {
+event.stopPropagation();
+const menu = document.getElementById('more-' + pid);
+const isOpen = menu.classList.contains('open');
+closeMenus();
+if (!isOpen) menu.classList.add('open');
+}
+
+document.addEventListener('click', () => closeMenus());
+
+function renameProject(pid, val) {
+const p = state.projects.find(x => x.id === pid);
+if (!p || !val.trim()) { if(p) { const el=document.getElementById('card-'+pid); if(el)el.querySelector('.card-name').value=p.name; } return; }
+p.name = val.trim();
+save();
+renderBadge();
+}
+
+function deleteProject(pid) {
+if (!confirm(t('confirmDeleteProject'))) return;
+state.projects = state.projects.filter(x => x.id !== pid);
+resequence();
+save();
+render();
+toast(t('toastProjectDeleted'));
+}
+
+function addTodo(pid) {
+const inp = document.getElementById('inp-' + pid);
+const text = inp.value.trim();
+if (!text) return;
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+p.todos.push({ id: uid(), text, done: false, createdAt: new Date().toISOString(), children: [] });
+sortTodosByDone(p);
+save();
+inp.value = '';
+patchCard(pid);
+requestAnimationFrame(() => { const ni = document.getElementById('inp-' + pid); if (ni) ni.focus(); });
+}
+
+function toggleTodo(pid, tid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const t = p.todos.find(x => x.id === tid);
+if (!t) return;
+normalizeTodo(t);
+t.done = !t.done;
+sortTodosByDone(p);
+save();
+patchCard(pid);
+}
+
+function deleteTodo(pid, tid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+p.todos = p.todos.filter(x => x.id !== tid);
+save();
+patchCard(pid);
+}
+
+function saveTodo(pid, tid, el) {
+const text = el.innerText.trim();
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const t = p.todos.find(x => x.id === tid);
+if (!t) return;
+normalizeTodo(t);
+if (!text) { el.innerText = t.text; return; }
+t.text = text;
+save();
+}
+
+function addSubtask(pid, tid) {
+const inp = document.getElementById('subinp-' + pid + '-' + tid);
+if (!inp) return;
+const text = inp.value.trim();
+if (!text) return;
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const todo = p.todos.find(x => x.id === tid);
+if (!todo) return;
+normalizeTodo(todo);
+todo.children.push({ id: uid(), text, done: false, createdAt: new Date().toISOString() });
+sortSubtasksByDone(todo);
+save();
+inp.value = '';
+patchCard(pid);
+requestAnimationFrame(() => { const ni = document.getElementById('subinp-' + pid + '-' + tid); if (ni) ni.focus(); });
+}
+
+function toggleSubtask(pid, tid, sid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const todo = p.todos.find(x => x.id === tid);
+if (!todo) return;
+normalizeTodo(todo);
+const s = todo.children.find(x => x.id === sid);
+if (!s) return;
+s.done = !s.done;
+sortSubtasksByDone(todo);
+save();
+patchCard(pid);
+}
+
+function deleteSubtask(pid, tid, sid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const todo = p.todos.find(x => x.id === tid);
+if (!todo) return;
+normalizeTodo(todo);
+todo.children = todo.children.filter(x => x.id !== sid);
+save();
+patchCard(pid);
+}
+
+function saveSubtask(pid, tid, sid, el) {
+const text = el.innerText.trim();
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const todo = p.todos.find(x => x.id === tid);
+if (!todo) return;
+normalizeTodo(todo);
+const s = todo.children.find(x => x.id === sid);
+if (!s) return;
+if (!text) { el.innerText = s.text; return; }
+s.text = text;
+save();
+}
+
+function openModal() {
+closeMenus();
+document.getElementById('modalOverlay').classList.remove('hidden');
+requestAnimationFrame(() => document.getElementById('newName').focus());
+}
+function closeModal() {
+document.getElementById('modalOverlay').classList.add('hidden');
+document.getElementById('newName').value = '';
+}
+function confirmModal() {
+const name = document.getElementById('newName').value.trim();
+if (!name) return;
+state.projects.push({ id: uid(), name, todos: [], createdAt: new Date().toISOString(), order: state.projects.length });
+resequence();
+save();
+closeModal();
+render();
+toast(t('toastProjectCreated'), true);
+}
+
+function exportMd() {
+if (!state.projects.length) { toast(t('toastNoProjects')); return; }
+const locale = t('dateLocale');
+const lines = ['# ' + t('mdTitle'), '', `> ${t('mdExportedAt')}${new Date().toLocaleString(locale)}`, ''];
+sortedProjects().forEach(p => {
+  const done = projectDone(p);
+  const total = projectTotal(p);
+  const pp = total ? Math.round(done / total * 100) : 0;
+  lines.push(`## ${p.name}`);
+  lines.push('');
+  lines.push(`**${t('mdProgress')}** ${done}/${total} (${pp}%)  ${'█'.repeat(Math.round(pp/10))}${'░'.repeat(10-Math.round(pp/10))}`);
+  lines.push('');
+  if (p.todos.length) {
+    p.todos.forEach(todo => {
+      normalizeTodo(todo);
+      lines.push(`- [${todo.done ? 'x' : ' '}] ${todo.text}`);
+      todo.children.forEach(c => lines.push(`  - [${c.done ? 'x' : ' '}] ${c.text}`));
+    });
+  } else lines.push(`_${t('mdNoTodos')}_`);
+  lines.push('');
+});
+downloadText(lines.join('\n'), `kanban-${new Date().toISOString().slice(0,10)}.md`, 'text/markdown;charset=utf-8');
+toast(t('toastExported'), true);
+}
+
+function exportProjectMd(pid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return;
+const done = projectDone(p);
+const total = projectTotal(p);
+const pp = total ? Math.round(done / total * 100) : 0;
+const locale = t('dateLocale');
+const lines = [`# ${p.name}`, '', `> ${t('mdExportedAt')}${new Date().toLocaleString(locale)}`, '', `**${t('mdProgress')}** ${done}/${total} (${pp}%)  ${'█'.repeat(Math.round(pp/10))}${'░'.repeat(10-Math.round(pp/10))}`, ''];
+if (p.todos.length) {
+  p.todos.forEach(todo => {
+    normalizeTodo(todo);
+    lines.push(`- [${todo.done ? 'x' : ' '}] ${todo.text}`);
+    todo.children.forEach(c => lines.push(`  - [${c.done ? 'x' : ' '}] ${c.text}`));
+  });
+} else lines.push(`_${t('mdNoTodos')}_`);
+downloadText(lines.join('\n'), `${slugify(p.name)}-${new Date().toISOString().slice(0,10)}.md`, 'text/markdown;charset=utf-8');
+toast(t('toastProjectExported'), true);
+}
+
+function downloadText(text, filename, type) {
+const blob = new Blob([text], { type });
+const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: filename });
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function slugify(text) {
+return String(text).trim().toLowerCase().replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '') || 'project';
+}
+
+function toast(msg, ok = false) {
+const c = document.getElementById('toasts');
+const el = document.createElement('div');
+el.className = 'toast' + (ok ? ' ok' : '');
+el.innerHTML = `<span>${ok ? '✓' : 'ℹ'}</span><span>${escHtml(msg)}</span>`;
+c.appendChild(el);
+setTimeout(() => { el.style.transition='opacity 0.2s'; el.style.opacity='0'; setTimeout(()=>el.remove(), 200); }, 2600);
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString(t('dateLocale'), { year:'numeric', month:'short', day:'numeric' }) : ''; }
+
+document.addEventListener('keydown', e => {
+if (e.key === 'Escape' && !document.getElementById('modalOverlay').classList.contains('hidden')) closeModal();
+});
+
+updateStaticText();
+render();
