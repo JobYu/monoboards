@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-04-19 — 流程：Cursor 規則（功能／修復後須 commit + push）
+
+- 新增 `.cursor/rules/git-commit-after-feature-or-fix.mdc`（`alwaysApply: true`）：完成新功能或修復 issue 後須於同輪對話執行 **commit** 與 **push**，並遵守 Conventional Commits；例外為使用者明確禁止或無變更。
+- `_MANIFEST.md` 補「開發慣例」條目指向該規則。
+
+## 2026-04-19 — 待辦：子清單可收合
+
+- 子清單已展開時，「⋯」選單第一項改為 **收合子清單**（`closeTodoSubWrap`）；收合後仍為「子清單…」以再次展開。
+
 ## 2026-04-19 — 待辦操作：刪除與子清單收進「⋯」選單
 
 - 主待辦列改為 **⋯** 選單：內含「子清單…」（展開子區並聚焦新增輸入）、「刪除」主項。

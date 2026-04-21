@@ -1,0 +1,21 @@
+---
+description: 新增功能或修復 issue 後須執行 git commit 並 push 至 origin（除非使用者禁止）。
+alwaysApply: true
+---
+
+# Git：功能或修復後須提交並推送
+
+在 **monoboards** 工作區內，凡完成下列任一類變更，**須於同一輪對話內**完成版本控制與遠端同步，**不得**在僅改檔後直接結束：
+
+1. **新功能**或可感知的行為／UI 優化（視為 `feat:` 或適當的 `refactor:` / `docs:` 等 conventional 前綴）。
+2. **修復** issue、bug 或錯誤行為（`fix:`）。
+
+## 執行要求
+
+- `git status` 確認變更後：`git add` 適當範圍 → `git commit -m "<type>: <一句話說明>"`（遵守 Conventional Commits，禁止純日期或空泛訊息）→ `git push origin` **當前分支**（通常為 `main`）。
+- 若 `git push` 遭拒絕，依慣例 `git pull --rebase origin <branch>` 後再推，**勿** force-push，除非使用者明確要求。
+
+## 例外（可跳過）
+
+- 使用者明確說明「不要 commit」「不要 push」「僅本地」。
+- 工作區無可提交變更。

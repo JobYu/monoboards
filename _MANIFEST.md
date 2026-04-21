@@ -29,6 +29,10 @@ monoboards/
 
 對外說明亦見根目錄 `README.md` / `README.zh-TW.md`；**功能與迭代紀錄**見 `history.md`。
 
+## 開發慣例
+
+- 新增功能或修復 issue／bug 後須 **`git commit`**（Conventional Commits 一句話說明）並 **`git push`** 至 `origin` 當前分支；細則與例外見 **`.cursor/rules/git-commit-after-feature-or-fix.mdc`**（Cursor Agent 設為 `alwaysApply`）。
+
 ## 核心功能
 
 - ✅ 項目卡片看板（拖曳排序）
