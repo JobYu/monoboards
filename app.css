@@ -78,21 +78,24 @@ html, body { min-height: 100%; font-family: 'Inter', -apple-system, sans-serif; 
 .prog-fill.done-all { background: linear-gradient(90deg, var(--green), #34d39a); }
 .divider { height: 1px; background: var(--border); margin: 0 18px; }
 .card-todos { padding: 12px 18px 0; display: flex; flex-direction: column; gap: 5px; }
-.todo-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; }
+.todo-item { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; }
 .todo-item:hover { background: var(--surface2); border-color: var(--border); }
 .cb { width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; border: 1.5px solid var(--border2); cursor: pointer; background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.13s ease; }
+.todo-item > .cb, .todo-sub > .cb { margin-top: 3px; }
 .cb:hover { border-color: var(--accent); }
 .cb.on { background: var(--green); border-color: var(--green); }
 .cb.on::after { content: ''; width: 9px; height: 5.5px; border-left: 1.8px solid #0e1118; border-bottom: 1.8px solid #0e1118; transform: rotate(-45deg) translate(0.5px, -0.5px); display: block; }
 .todo-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.45; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 1px 4px; outline: none; font-family: inherit; cursor: text; word-break: break-word; transition: border-color 0.12s, background 0.12s; }
 .todo-text:focus { border-color: var(--accent); background: var(--surface2); }
 .todo-text.done { text-decoration: line-through; color: var(--text-dim); }
-.todo-del { opacity: 0; transition: opacity 0.12s; }
-.todo-item:hover .todo-del { opacity: 1; }
 .todo-empty { padding: 16px 10px; text-align: center; font-size: 12px; color: var(--text-dim); border: 1px dashed var(--border2); border-radius: var(--radius-xs); }
 .todo-block { display: flex; flex-direction: column; gap: 0; }
 .todo-sub-wrap { margin: 2px 0 6px 14px; padding: 0 0 2px 12px; border-left: 2px solid var(--border2); display: flex; flex-direction: column; gap: 3px; }
-.todo-sub { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; }
+.todo-sub-wrap.collapsed { display: none; }
+.todo-more-wrap, .todo-sub-more-wrap { flex-shrink: 0; align-self: flex-start; }
+.todo-more-wrap .more-menu, .todo-sub-more-wrap .more-menu { z-index: 30; top: 28px; min-width: 140px; }
+.todo-sub-more-wrap .more-menu { top: 26px; min-width: 120px; }
+.todo-sub { display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; }
 .todo-sub:hover { background: var(--surface2); border-color: var(--border); }
 .todo-sub .cb { width: 15px; height: 15px; border-radius: 4px; }
 .todo-sub .cb.on::after { width: 8px; height: 4.5px; border-left-width: 1.5px; border-bottom-width: 1.5px; }

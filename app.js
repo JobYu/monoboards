@@ -1,6 +1,7 @@
 const KEY = 'kanban-v2';
 function normalizeTodo(t) {
 if (!Array.isArray(t.children)) t.children = [];
+if (typeof t.subOpen !== 'boolean') t.subOpen = t.children.length > 0;
 }
 function sortSubtasksByDone(t) {
 normalizeTodo(t);
@@ -149,6 +150,7 @@ render();
 
 function todoBlockHtml(p, todo) {
 normalizeTodo(todo);
+const subWrapClass = 'todo-sub-wrap' + (todo.subOpen ? '' : ' collapsed');
 const subs = todo.children.map(sub => `
     <div class="todo-sub">
       <div class="cb ${sub.done ? 'on' : ''}" onclick="toggleSubtask('${p.id}','${todo.id}','${sub.id}')"></div>
@@ -157,9 +159,17 @@ const subs = todo.children.map(sub => `
         onblur="saveSubtask('${p.id}','${todo.id}','${sub.id}',this)"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
       >${escHtml(sub.text)}</div>
-      <button type="button" class="icon-btn del todo-del" onclick="deleteSubtask('${p.id}','${todo.id}','${sub.id}'); event.stopPropagation();" title="${escAttr(t('deleteTodo'))}">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div class="more-wrap todo-sub-more-wrap">
+        <button type="button" class="icon-btn" onclick="toggleSubMore('${p.id}','${todo.id}','${sub.id}',event)" title="${escAttr(t('more'))}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+        <div class="more-menu" id="sub-more-${p.id}-${todo.id}-${sub.id}" onclick="event.stopPropagation()">
+          <button type="button" class="more-item danger" onclick="deleteSubtask('${p.id}','${todo.id}','${sub.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            ${escHtml(t('deleteTodo'))}
+          </button>
+        </div>
+      </div>
     </div>`).join('');
 const subAdd = `
     <div class="todo-sub-add">
@@ -178,11 +188,23 @@ return `
         onblur="saveTodo('${p.id}','${todo.id}',this)"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
       >${escHtml(todo.text)}</div>
-      <button type="button" class="icon-btn del todo-del" onclick="deleteTodo('${p.id}','${todo.id}'); event.stopPropagation();" title="${escAttr(t('deleteTodo'))}">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div class="more-wrap todo-more-wrap">
+        <button type="button" class="icon-btn" onclick="toggleTodoMore('${p.id}','${todo.id}',event)" title="${escAttr(t('more'))}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+        <div class="more-menu" id="todo-more-${p.id}-${todo.id}" onclick="event.stopPropagation()">
+          <button type="button" class="more-item" onclick="openTodoSubAndFocus('${p.id}','${todo.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            ${escHtml(t('todoMoreSub'))}
+          </button>
+          <button type="button" class="more-item danger" onclick="deleteTodo('${p.id}','${todo.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            ${escHtml(t('deleteTodo'))}
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="todo-sub-wrap">${subs}${subAdd}</div>
+    <div class="${subWrapClass}">${subs}${subAdd}</div>
   </div>`;
 }
 
@@ -262,6 +284,39 @@ closeMenus();
 if (!isOpen) menu.classList.add('open');
 }
 
+function toggleTodoMore(pid, tid, event) {
+event.stopPropagation();
+const menu = document.getElementById('todo-more-' + pid + '-' + tid);
+if (!menu) return;
+const isOpen = menu.classList.contains('open');
+closeMenus();
+if (!isOpen) menu.classList.add('open');
+}
+
+function toggleSubMore(pid, tid, sid, event) {
+event.stopPropagation();
+const menu = document.getElementById('sub-more-' + pid + '-' + tid + '-' + sid);
+if (!menu) return;
+const isOpen = menu.classList.contains('open');
+closeMenus();
+if (!isOpen) menu.classList.add('open');
+}
+
+function openTodoSubAndFocus(pid, tid) {
+const p = state.projects.find(x => x.id === pid);
+const todo = p && p.todos.find(x => x.id === tid);
+if (!todo) return;
+normalizeTodo(todo);
+todo.subOpen = true;
+save();
+closeMenus();
+patchCard(pid);
+requestAnimationFrame(() => {
+  const ni = document.getElementById('subinp-' + pid + '-' + tid);
+  if (ni) ni.focus();
+});
+}
+
 document.addEventListener('click', () => closeMenus());
 
 function renameProject(pid, val) {
@@ -338,6 +393,7 @@ const todo = p.todos.find(x => x.id === tid);
 if (!todo) return;
 normalizeTodo(todo);
 todo.children.push({ id: uid(), text, done: false, createdAt: new Date().toISOString() });
+todo.subOpen = true;
 sortSubtasksByDone(todo);
 save();
 inp.value = '';
@@ -366,6 +422,7 @@ const todo = p.todos.find(x => x.id === tid);
 if (!todo) return;
 normalizeTodo(todo);
 todo.children = todo.children.filter(x => x.id !== sid);
+if (!todo.children.length) todo.subOpen = false;
 save();
 patchCard(pid);
 }
