@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-04-19 — 功能：專案歸檔與歸檔列表
+
+- 專案物件新增 **`archived`**、**`archivedAt`**；主看板僅顯示未歸檔專案；**全部完成**（進度 100% 且至少一筆任務）時，卡片「⋯」可選 **歸檔**。
+- 右下角 **FAB** 進入歸檔列表（可顯示歸檔數 badge）；歸檔內「⋯」可 **取消歸檔** 或刪除；`Esc` 與 FAB 可返回主看板。
+- **匯出全部 Markdown**：未歸檔區塊後接 **`mdArchivedSection`** 標題與已歸檔專案區塊。
+
 ## 2026-04-19 — 流程：Cursor 規則（功能／修復後須 commit + push）
 
 - 新增 `.cursor/rules/git-commit-after-feature-or-fix.mdc`（`alwaysApply: true`）：完成新功能或修復 issue 後須於同輪對話執行 **commit** 與 **push**，並遵守 Conventional Commits；例外為使用者明確禁止或無變更。

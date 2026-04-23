@@ -7,7 +7,7 @@
 ## 技術棧
 
 - **語言**: HTML5 + CSS3 + Vanilla JavaScript (ES6+)；樣式 `app.css`，文案 `i18n.js`，邏輯 `app.js`，入口 `index.html`
-- **存儲**: localStorage (完全離線，不上傳任何數據)
+- **存儲**: localStorage (完全離線，不上傳任何數據)；專案可 **歸檔**（`archived` / `archivedAt`），仍存於同一鍵 `kanban-v2`
 - **字體**: Inter (Google Fonts CDN)
 - **依賴**: 零
 
@@ -35,7 +35,7 @@ monoboards/
 
 ## 核心功能
 
-- ✅ 項目卡片看板（拖曳排序）
+- ✅ 項目卡片看板（拖曳排序；**全部完成**可歸檔，右下角進入歸檔列表與取消歸檔）
 - ✅ Todo 清單（新增 / 勾選 / 編輯 / 刪除；每條可附**子清單**）
 - ✅ 實時進度條與完成率計算
 - ✅ 數據持久化（localStorage，鍵名 `kanban-v2`）

@@ -28,10 +28,19 @@ return 1 + t.children.length;
 }
 function projectDone(p) { return p.todos.reduce((s, t) => s + taskDone(t), 0); }
 function projectTotal(p) { return p.todos.reduce((s, t) => s + taskTotal(t), 0); }
+function normalizeProject(p) {
+if (typeof p.archived !== 'boolean') p.archived = false;
+if (p.archived) {
+  if (!p.archivedAt) p.archivedAt = p.createdAt || new Date().toISOString();
+} else {
+  p.archivedAt = null;
+}
+}
 function load() {
 try {
   const s = JSON.parse(localStorage.getItem(KEY)) || { projects: [] };
   (s.projects || []).forEach(p => {
+    normalizeProject(p);
     (p.todos || []).forEach(normalizeTodo);
     sortTodosByDone(p);
   });
@@ -41,26 +50,65 @@ try {
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
 function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 let state = load();
+let boardView = 'main';
 
-function sortedProjects() { return [...state.projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); }
-function resequence() { state.projects.forEach((p, i) => p.order = i); }
-function render() { renderGrid(); renderBadge(); }
+function sortedActiveProjects() {
+return state.projects.filter(p => !p.archived).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+function sortedArchivedProjects() {
+return state.projects.filter(p => p.archived).sort((a, b) => {
+  const ta = a.archivedAt || '';
+  const tb = b.archivedAt || '';
+  if (ta !== tb) return tb.localeCompare(ta);
+  return (a.order ?? 0) - (b.order ?? 0);
+});
+}
+function resequence() {
+sortedActiveProjects().forEach((p, i) => { p.order = i; });
+}
+function render() {
+if (boardView === 'main') renderMainGrid();
+else renderArchiveGrid();
+renderBadge();
+updateBoardViewChrome();
+}
 function renderBadge() {
 const el = document.getElementById('headerBadge');
-const n = state.projects.length;
+const list = sortedActiveProjects();
+const n = list.length;
 if (!n) { el.textContent = ''; return; }
-const done = state.projects.reduce((s, p) => s + projectDone(p), 0);
-const total = state.projects.reduce((s, p) => s + projectTotal(p), 0);
+const done = list.reduce((s, p) => s + projectDone(p), 0);
+const total = list.reduce((s, p) => s + projectTotal(p), 0);
 el.textContent = t('projectsCount', n) + ' \u00b7 ' + t('completedCount', done, total);
+}
+function setBoardView(v) {
+boardView = v === 'archive' ? 'archive' : 'main';
+render();
+}
+function toggleBoardArchiveView() {
+setBoardView(boardView === 'main' ? 'archive' : 'main');
+}
+function updateBoardViewChrome() {
+const addBtn = document.querySelector('.header-actions .btn-primary');
+if (addBtn) addBtn.style.display = boardView === 'main' ? '' : 'none';
+const grid = document.getElementById('grid');
+if (grid) grid.classList.toggle('archive-layout', boardView === 'archive');
+const fab = document.getElementById('archiveFab');
+if (!fab) return;
+const nArch = state.projects.filter(p => p.archived).length;
+fab.title = boardView === 'main' ? t('openArchive') : t('closeArchive');
+fab.innerHTML = boardView === 'main'
+  ? `<span class="archive-fab-badge${nArch ? '' : ' hidden'}" id="archiveFabBadge">${nArch}</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>`
+  : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 }
 function pct(p) {
 const tot = projectTotal(p);
 return tot ? Math.round(projectDone(p) / tot * 100) : 0;
 }
 
-function renderGrid() {
+function renderMainGrid() {
 const grid = document.getElementById('grid');
-const projects = sortedProjects();
+const projects = sortedActiveProjects();
 if (!projects.length) {
   grid.innerHTML = `
     <div class="empty">
@@ -78,6 +126,24 @@ grid.innerHTML = projects.map(p => cardHtml(p)).join('') + addCardHtml();
 bindDrag();
 }
 
+function renderArchiveGrid() {
+const grid = document.getElementById('grid');
+const list = sortedArchivedProjects();
+const toolbar = `
+  <div class="archive-toolbar">
+    <button type="button" class="btn btn-ghost" onclick="setBoardView('main')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      ${escHtml(t('backToBoard'))}
+    </button>
+    <h2 class="archive-toolbar-title">${escHtml(t('archiveTitle'))}</h2>
+  </div>`;
+if (!list.length) {
+  grid.innerHTML = toolbar + `<div class="empty archive-empty"><p>${escHtml(t('archiveEmpty'))}</p></div>`;
+  return;
+}
+grid.innerHTML = toolbar + list.map(p => cardHtml(p)).join('');
+}
+
 function patchCard(pid) {
 const p = state.projects.find(x => x.id === pid);
 if (!p) { render(); return; }
@@ -86,7 +152,7 @@ if (!el) { render(); return; }
 el.outerHTML = cardHtml(p);
 renderBadge();
 const next = document.getElementById('card-' + pid);
-if (next) attachCardDrag(next);
+if (next && boardView === 'main') attachCardDrag(next);
 }
 
 function closeMenus() {
@@ -134,11 +200,15 @@ e.currentTarget.classList.remove('drop-before', 'drop-after');
 
 function onDrop(e) {
 e.preventDefault();
+if (boardView !== 'main') return;
 const sourceId = e.dataTransfer.getData('text/plain');
 const target = e.currentTarget;
 if (!sourceId || !target.id || sourceId === target.id) return;
-const sourceIndex = state.projects.findIndex(p => 'card-' + p.id === sourceId);
-const targetIndex = state.projects.findIndex(p => 'card-' + p.id === target.id);
+const sourceP = state.projects.find(p => 'card-' + p.id === sourceId);
+const targetP = state.projects.find(p => 'card-' + p.id === target.id);
+if (!sourceP || !targetP || sourceP.archived || targetP.archived) return;
+const sourceIndex = state.projects.findIndex(pr => pr.id === sourceP.id);
+const targetIndex = state.projects.findIndex(pr => pr.id === targetP.id);
 if (sourceIndex < 0 || targetIndex < 0) return;
 const [moved] = state.projects.splice(sourceIndex, 1);
 const insertIndex = sourceIndex < targetIndex && target.classList.contains('drop-after') ? targetIndex : targetIndex + (target.classList.contains('drop-after') ? 1 : 0);
@@ -215,6 +285,7 @@ return `
 }
 
 function cardHtml(p) {
+const archiveView = boardView === 'archive';
 const done = projectDone(p);
 const total = projectTotal(p);
 const pp = pct(p);
@@ -222,6 +293,18 @@ const full = total > 0 && done === total;
 const todos = p.todos.length
   ? p.todos.map(todo => todoBlockHtml(p, todo)).join('')
   : `<div class="todo-empty">${escHtml(t('todoEmpty'))}</div>`;
+const moreArchive = !archiveView && full
+  ? `<button type="button" class="more-item" onclick="archiveProject('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+            ${escHtml(t('archiveProject'))}
+          </button>`
+  : '';
+const moreUnarchive = archiveView
+  ? `<button type="button" class="more-item" onclick="unarchiveProject('${p.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+            ${escHtml(t('unarchiveProject'))}
+          </button>`
+  : '';
 
 return `
 <div class="card" id="card-${p.id}">
@@ -242,7 +325,8 @@ return `
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
         </button>
         <div class="more-menu" id="more-${p.id}" onclick="event.stopPropagation()">
-          <button class="more-item danger" onclick="deleteProject('${p.id}')">
+          ${moreArchive}${moreUnarchive}
+          <button type="button" class="more-item danger" onclick="deleteProject('${p.id}')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             ${escHtml(t('deleteProject'))}
           </button>
@@ -351,6 +435,36 @@ resequence();
 save();
 render();
 toast(t('toastProjectDeleted'));
+}
+
+function archiveProject(pid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p || p.archived) return;
+const tot = projectTotal(p);
+const done = projectDone(p);
+if (!(tot > 0 && done === tot)) return;
+p.archived = true;
+p.archivedAt = new Date().toISOString();
+resequence();
+save();
+closeMenus();
+render();
+toast(t('toastArchived'), true);
+}
+
+function unarchiveProject(pid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p || !p.archived) return;
+const act = sortedActiveProjects();
+const maxO = act.length ? Math.max(...act.map(x => x.order ?? 0)) : -1;
+p.archived = false;
+p.archivedAt = null;
+p.order = maxO + 1;
+resequence();
+save();
+closeMenus();
+render();
+toast(t('toastUnarchived'), true);
 }
 
 function addTodo(pid) {
@@ -470,7 +584,9 @@ document.getElementById('newName').value = '';
 function confirmModal() {
 const name = document.getElementById('newName').value.trim();
 if (!name) return;
-state.projects.push({ id: uid(), name, todos: [], createdAt: new Date().toISOString(), order: state.projects.length });
+boardView = 'main';
+const order = sortedActiveProjects().length;
+state.projects.push({ id: uid(), name, todos: [], createdAt: new Date().toISOString(), order, archived: false, archivedAt: null });
 resequence();
 save();
 closeModal();
@@ -479,10 +595,12 @@ toast(t('toastProjectCreated'), true);
 }
 
 function exportMd() {
-if (!state.projects.length) { toast(t('toastNoProjects')); return; }
+const active = sortedActiveProjects();
+const archived = sortedArchivedProjects();
+if (!active.length && !archived.length) { toast(t('toastNoProjects')); return; }
 const locale = t('dateLocale');
 const lines = ['# ' + t('mdTitle'), '', `> ${t('mdExportedAt')}${new Date().toLocaleString(locale)}`, ''];
-sortedProjects().forEach(p => {
+function appendProjectMdBlock(p) {
   const done = projectDone(p);
   const total = projectTotal(p);
   const pp = total ? Math.round(done / total * 100) : 0;
@@ -498,7 +616,13 @@ sortedProjects().forEach(p => {
     });
   } else lines.push(`_${t('mdNoTodos')}_`);
   lines.push('');
-});
+}
+active.forEach(appendProjectMdBlock);
+if (archived.length) {
+  lines.push(`## ${t('mdArchivedSection')}`);
+  lines.push('');
+  archived.forEach(appendProjectMdBlock);
+}
 downloadText(lines.join('\n'), `kanban-${new Date().toISOString().slice(0,10)}.md`, 'text/markdown;charset=utf-8');
 toast(t('toastExported'), true);
 }
@@ -547,7 +671,9 @@ function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39
 function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString(t('dateLocale'), { year:'numeric', month:'short', day:'numeric' }) : ''; }
 
 document.addEventListener('keydown', e => {
-if (e.key === 'Escape' && !document.getElementById('modalOverlay').classList.contains('hidden')) closeModal();
+if (e.key !== 'Escape') return;
+if (!document.getElementById('modalOverlay').classList.contains('hidden')) closeModal();
+else if (boardView === 'archive') setBoardView('main');
 });
 
 updateStaticText();
