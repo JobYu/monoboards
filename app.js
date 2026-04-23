@@ -59,7 +59,7 @@ function sortedArchivedProjects() {
 return state.projects.filter(p => p.archived).sort((a, b) => {
   const ta = a.archivedAt || '';
   const tb = b.archivedAt || '';
-  if (ta !== tb) return tb.localeCompare(ta);
+  if (ta !== tb) return ta.localeCompare(tb);
   return (a.order ?? 0) - (b.order ?? 0);
 });
 }
@@ -141,7 +141,7 @@ if (!list.length) {
   grid.innerHTML = toolbar + `<div class="empty archive-empty"><p>${escHtml(t('archiveEmpty'))}</p></div>`;
   return;
 }
-grid.innerHTML = toolbar + list.map(p => cardHtml(p)).join('');
+grid.innerHTML = toolbar + `<div class="archive-cards-strip">${list.map(p => cardHtml(p)).join('')}</div>`;
 }
 
 function patchCard(pid) {

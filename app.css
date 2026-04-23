@@ -144,5 +144,36 @@ html, body { min-height: 100%; font-family: 'Inter', -apple-system, sans-serif; 
 .archive-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; min-width: 100%; }
 .archive-toolbar-title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
 .archive-empty { min-height: 140px; justify-content: center; }
-.grid.archive-layout { padding-bottom: 8px; }
+.grid.archive-layout {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: visible;
+  padding-bottom: 8px;
+}
+.grid.archive-layout .archive-toolbar {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+.archive-cards-strip {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 18px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  width: max-content;
+  min-width: 100%;
+  direction: ltr;
+  scroll-snap-type: x proximity;
+}
+.archive-cards-strip .card {
+  scroll-snap-align: start;
+}
 @media (max-width: 580px) { .header { padding: 0 16px; } .header-badge { display: none; } .main { padding: 14px; } .card, .add-card { width: 320px; flex-basis: 320px; } .footer { padding: 14px 16px; flex-direction: column; text-align: center; } .archive-fab { bottom: 100px; right: 16px; width: 48px; height: 48px; } }
