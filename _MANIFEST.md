@@ -21,6 +21,7 @@ monoboards/
 ├── app.js             │  看板邏輯與 localStorage
 ├── privacy.html       │  隱私協議
 ├── terms.html         │  使用協議
+├── pixelbear.html     │  像素熊老師個人頁（獨立靜態單頁）
 ├── README.md          │  倉庫說明（英文，預設）
 ├── README.zh-TW.md    │  倉庫說明（繁體中文）
 ├── history.md         │  變更紀錄／功能迭代
