@@ -41,6 +41,7 @@ monoboards/
 - ✅ 實時進度條與完成率計算
 - ✅ 數據持久化（localStorage，鍵名 `kanban-v2`）
 - ✅ Markdown 導出（單項目 / 全部）
+- ✅ Markdown 導入（從文件恢復全部項目）
 - ✅ 響應式設計（桌面 + 移動端）
 - ✅ 多語言界面（繁體中文 / 簡體中文 / English）
 

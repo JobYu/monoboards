@@ -653,6 +653,61 @@ document.body.appendChild(a); a.click(); document.body.removeChild(a);
 setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+function importMd(input) {
+const file = input.files[0];
+if (!file) return;
+input.value = '';
+const reader = new FileReader();
+reader.onload = e => {
+  const imported = parseMdProjects(e.target.result);
+  if (!imported.length) { toast(t('toastImportEmpty')); return; }
+  const act = sortedActiveProjects();
+  const maxO = act.length ? Math.max(...act.map(x => x.order ?? 0)) : -1;
+  const now = new Date().toISOString();
+  imported.forEach((p, i) => {
+    state.projects.push({
+      id: uid(), name: p.name,
+      todos: p.todos.map(t => ({
+        id: uid(), text: t.text, done: t.done, createdAt: now,
+        children: t.children.map(c => ({ id: uid(), text: c.text, done: c.done, createdAt: now })),
+        subOpen: t.children.length > 0
+      })),
+      createdAt: now, order: maxO + 1 + i,
+      archived: p.archived, archivedAt: p.archived ? now : null
+    });
+  });
+  save();
+  boardView = 'main';
+  render();
+  toast(t('toastImported', imported.length), true);
+};
+reader.readAsText(file);
+}
+
+function parseMdProjects(text) {
+const lines = text.split('\n');
+const projects = [];
+let current = null;
+let currentTodo = null;
+let inArchive = false;
+for (const line of lines) {
+  if (/^>\s/.test(line)) continue;
+  if (/^\*\*.*(?:進度|进度|Progress).*$/.test(line)) continue;
+  if (/^_{1,2}[^_]+_{1,2}$/.test(line)) continue;
+  if (/^##\s*(?:已歸檔專案|已归档项目|Archived projects)/i.test(line)) { inArchive = true; continue; }
+  const pm2 = line.match(/^##\s+(.+)$/);
+  if (pm2) { if (current) projects.push(current); current = { name: pm2[1].trim(), todos: [], archived: inArchive }; currentTodo = null; continue; }
+  const pm1 = line.match(/^#\s+(.+)$/);
+  if (pm1) { const name = pm1[1].trim(); if (/^monoboards$/i.test(name)) continue; if (current) projects.push(current); current = { name, todos: [], archived: false }; currentTodo = null; continue; }
+  if (!current) continue;
+  const sm = line.match(/^  -\s*\[([ xX])\]\s*(.+)$/);
+  if (sm && currentTodo) { currentTodo.children.push({ text: sm[2].trim(), done: sm[1].toLowerCase() === 'x' }); continue; }
+  const tm = line.match(/^-\s*\[([ xX])\]\s*(.+)$/);
+  if (tm) { currentTodo = { text: tm[2].trim(), done: tm[1].toLowerCase() === 'x', children: [] }; current.todos.push(currentTodo); }
+}
+if (current) projects.push(current);
+return projects;
+}
 function slugify(text) {
 return String(text).trim().toLowerCase().replace(/[^\w\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '') || 'project';
 }

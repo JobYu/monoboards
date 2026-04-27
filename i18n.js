@@ -17,6 +17,8 @@ const I18N = {
   addSubPlaceholder: '新增子項目…',
   add: '新增',
   export: '導出',
+  exportAll: '導出全部',
+  import: '導入',
   more: '更多',
   deleteProject: '刪除項目',
   deleteTodo: '刪除',
@@ -28,6 +30,8 @@ const I18N = {
   toastNoProjects: '沒有項目可以導出',
   toastExported: '已導出 Markdown',
   toastProjectExported: '已導出該項目 Markdown',
+  toastImportEmpty: '文件中未找到可導入的項目',
+  toastImported: '已導入 {0} 個項目',
   mdTitle: 'monoboards',
   mdExportedAt: '導出時間：',
   mdProgress: '進度：',
@@ -64,6 +68,8 @@ const I18N = {
   addSubPlaceholder: '新增子项目…',
   add: '新增',
   export: '导出',
+  exportAll: '导出全部',
+  import: '导入',
   more: '更多',
   deleteProject: '删除项目',
   deleteTodo: '删除',
@@ -75,6 +81,8 @@ const I18N = {
   toastNoProjects: '没有项目可以导出',
   toastExported: '已导出 Markdown',
   toastProjectExported: '已导出该项目 Markdown',
+  toastImportEmpty: '文件中未找到可导入的项目',
+  toastImported: '已导入 {0} 个项目',
   mdTitle: 'monoboards',
   mdExportedAt: '导出时间：',
   mdProgress: '进度：',
@@ -111,6 +119,8 @@ const I18N = {
   addSubPlaceholder: 'Add sub-task…',
   add: 'Add',
   export: 'Export',
+  exportAll: 'Export All',
+  import: 'Import',
   more: 'More',
   deleteProject: 'Delete Project',
   deleteTodo: 'Delete',
@@ -122,6 +132,8 @@ const I18N = {
   toastNoProjects: 'No projects to export',
   toastExported: 'Exported Markdown',
   toastProjectExported: 'Project Markdown exported',
+  toastImportEmpty: 'No projects found in file',
+  toastImported: 'Imported {0} projects',
   mdTitle: 'monoboards',
   mdExportedAt: 'Exported at:',
   mdProgress: 'Progress:',
@@ -188,6 +200,10 @@ document.getElementById('langMenu').classList.remove('open');
 function updateStaticText() {
 document.getElementById('langLabel').textContent = LANG_NAMES[currentLang];
 document.getElementById('addProjectBtn').textContent = t('addProject');
+const exportAllBtn = document.getElementById('exportAllBtn');
+if (exportAllBtn) exportAllBtn.textContent = t('exportAll');
+const importBtnEl = document.getElementById('importBtn');
+if (importBtnEl) importBtnEl.textContent = t('import');
 document.getElementById('modalTitle').textContent = t('newProject');
 document.getElementById('modalLabel').textContent = t('projectName');
 document.getElementById('newName').placeholder = t('projectNamePlaceholder');
