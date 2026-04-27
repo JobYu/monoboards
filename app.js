@@ -64,7 +64,7 @@ return state.projects.filter(p => p.archived).sort((a, b) => {
 });
 }
 function resequence() {
-sortedActiveProjects().forEach((p, i) => { p.order = i; });
+state.projects.filter(p => !p.archived).forEach((p, i) => { p.order = i; });
 }
 function render() {
 if (boardView === 'main') renderMainGrid();
@@ -211,7 +211,9 @@ const sourceIndex = state.projects.findIndex(pr => pr.id === sourceP.id);
 const targetIndex = state.projects.findIndex(pr => pr.id === targetP.id);
 if (sourceIndex < 0 || targetIndex < 0) return;
 const [moved] = state.projects.splice(sourceIndex, 1);
-const insertIndex = sourceIndex < targetIndex && target.classList.contains('drop-after') ? targetIndex : targetIndex + (target.classList.contains('drop-after') ? 1 : 0);
+const insertIndex = sourceIndex < targetIndex
+  ? targetIndex - (target.classList.contains('drop-after') ? 0 : 1)
+  : targetIndex + (target.classList.contains('drop-after') ? 1 : 0);
 state.projects.splice(Math.max(0, Math.min(insertIndex, state.projects.length)), 0, moved);
 resequence();
 save();
@@ -455,11 +457,10 @@ toast(t('toastArchived'), true);
 function unarchiveProject(pid) {
 const p = state.projects.find(x => x.id === pid);
 if (!p || !p.archived) return;
-const act = sortedActiveProjects();
-const maxO = act.length ? Math.max(...act.map(x => x.order ?? 0)) : -1;
 p.archived = false;
 p.archivedAt = null;
-p.order = maxO + 1;
+const idx = state.projects.findIndex(x => x.id === pid);
+if (idx >= 0) { state.projects.splice(idx, 1); state.projects.push(p); }
 resequence();
 save();
 closeMenus();
