@@ -95,8 +95,14 @@ html, body { min-height: 100%; font-family: 'Inter', -apple-system, sans-serif; 
 .todo-more-wrap, .todo-sub-more-wrap { flex-shrink: 0; align-self: flex-start; }
 .todo-more-wrap .more-menu, .todo-sub-more-wrap .more-menu { z-index: 30; top: 28px; min-width: 140px; }
 .todo-sub-more-wrap .more-menu { top: 26px; min-width: 120px; }
-.todo-sub { display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; }
+.todo-sub { display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; border-radius: var(--radius-xs); background: transparent; border: 1px solid transparent; cursor: grab; transition: background 0.12s, border-color 0.12s, opacity 0.12s; }
 .todo-sub:hover { background: var(--surface2); border-color: var(--border); }
+.todo-sub.dragging { opacity: 0.55; cursor: grabbing; }
+.todo-sub.drop-before { border-top-color: var(--accent); }
+.todo-sub.drop-after { border-bottom-color: var(--accent); }
+.todo-sub .todo-text { cursor: text; }
+.todo-sub-drag { width: 10px; min-height: 17px; display: flex; align-items: center; justify-content: center; color: var(--text-dim); flex-shrink: 0; }
+.todo-sub:hover .todo-sub-drag { color: var(--text-muted); }
 .todo-sub .cb { width: 15px; height: 15px; border-radius: 4px; }
 .todo-sub .cb.on::after { width: 8px; height: 4.5px; border-left-width: 1.5px; border-bottom-width: 1.5px; }
 .todo-sub-text { font-size: 12px; line-height: 1.4; }
