@@ -124,6 +124,7 @@ if (!projects.length) {
 }
 grid.innerHTML = projects.map(p => cardHtml(p)).join('') + addCardHtml();
 bindDrag();
+bindTodoDrag(grid);
 bindSubtaskDrag(grid);
 }
 
@@ -154,6 +155,7 @@ el.outerHTML = cardHtml(p);
 renderBadge();
 const next = document.getElementById('card-' + pid);
 if (next && boardView === 'main') attachCardDrag(next);
+if (next && boardView === 'main') bindTodoDrag(next);
 if (next && boardView === 'main') bindSubtaskDrag(next);
 }
 
@@ -172,6 +174,21 @@ card.addEventListener('drop', onDrop);
 }
 function bindDrag() {
 document.querySelectorAll('.card').forEach(attachCardDrag);
+}
+
+function attachTodoDrag(item) {
+const handle = item.querySelector('.todo-drag');
+if (handle) {
+  handle.draggable = true;
+  handle.addEventListener('dragstart', onTodoDragStart);
+  handle.addEventListener('dragend', onTodoDragEnd);
+}
+item.addEventListener('dragover', onTodoDragOver);
+item.addEventListener('dragleave', onTodoDragLeave);
+item.addEventListener('drop', onTodoDrop);
+}
+function bindTodoDrag(root = document) {
+root.querySelectorAll('.todo-block').forEach(attachTodoDrag);
 }
 
 function attachSubtaskDrag(item) {
@@ -232,6 +249,74 @@ state.projects.splice(Math.max(0, Math.min(insertIndex, state.projects.length)),
 resequence();
 save();
 render();
+}
+
+function findTodoContext(pid, tid) {
+const p = state.projects.find(x => x.id === pid);
+if (!p) return null;
+const index = p.todos.findIndex(x => x.id === tid);
+if (index < 0) return null;
+return { p, index };
+}
+
+function clearTodoDragClasses() {
+document.querySelectorAll('.todo-block.drop-before,.todo-block.drop-after,.todo-block.dragging').forEach(el => el.classList.remove('drop-before', 'drop-after', 'dragging'));
+}
+
+function onTodoDragStart(e) {
+const item = e.currentTarget.closest('.todo-block');
+if (!item.dataset.pid || !item.dataset.tid) return;
+e.stopPropagation();
+closeMenus();
+item.classList.add('dragging');
+e.dataTransfer.effectAllowed = 'move';
+e.dataTransfer.setData('application/x-monoboards-todo', JSON.stringify({
+  pid: item.dataset.pid,
+  tid: item.dataset.tid
+}));
+}
+
+function onTodoDragEnd(e) {
+e.stopPropagation();
+clearTodoDragClasses();
+}
+
+function onTodoDragOver(e) {
+e.preventDefault();
+e.stopPropagation();
+const target = e.currentTarget;
+if (target.classList.contains('dragging')) return;
+const rect = target.getBoundingClientRect();
+const before = e.clientY < rect.top + rect.height / 2;
+target.classList.toggle('drop-before', before);
+target.classList.toggle('drop-after', !before);
+}
+
+function onTodoDragLeave(e) {
+e.stopPropagation();
+e.currentTarget.classList.remove('drop-before', 'drop-after');
+}
+
+function onTodoDrop(e) {
+e.preventDefault();
+e.stopPropagation();
+const raw = e.dataTransfer.getData('application/x-monoboards-todo');
+if (!raw) return;
+let source;
+try { source = JSON.parse(raw); } catch { return; }
+const target = e.currentTarget;
+const targetData = target.dataset;
+if (!source || source.pid !== targetData.pid || source.tid === targetData.tid) return;
+const sourceCtx = findTodoContext(source.pid, source.tid);
+const targetCtx = findTodoContext(targetData.pid, targetData.tid);
+if (!sourceCtx || !targetCtx || sourceCtx.p !== targetCtx.p) return;
+const [moved] = sourceCtx.p.todos.splice(sourceCtx.index, 1);
+const targetIndex = sourceCtx.p.todos.findIndex(x => x.id === targetData.tid);
+if (targetIndex < 0) return;
+const insertIndex = targetIndex + (target.classList.contains('drop-after') ? 1 : 0);
+sourceCtx.p.todos.splice(Math.max(0, Math.min(insertIndex, sourceCtx.p.todos.length)), 0, moved);
+save();
+patchCard(source.pid);
 }
 
 function findSubtaskContext(pid, tid, sid) {
@@ -353,8 +438,11 @@ const todoSubMenuLead = todo.subOpen
             ${escHtml(t('todoMoreSub'))}
           </button>`;
 return `
-  <div class="todo-block">
+  <div class="todo-block" id="todo-${p.id}-${todo.id}" data-pid="${escAttr(p.id)}" data-tid="${escAttr(todo.id)}">
     <div class="todo-item">
+      <div class="todo-drag" aria-hidden="true">
+        <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1"/><circle cx="7" cy="3" r="1"/><circle cx="3" cy="7" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="3" cy="11" r="1"/><circle cx="7" cy="11" r="1"/></svg>
+      </div>
       <div class="cb ${todo.done ? 'on' : ''}" onclick="toggleTodo('${p.id}','${todo.id}')"></div>
       <div class="todo-text ${todo.done ? 'done' : ''}"
         contenteditable="true"
